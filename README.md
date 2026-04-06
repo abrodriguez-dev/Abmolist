@@ -45,8 +45,18 @@ FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nTU_CLAVE\n-----END PRIVATE KE
 
 1. Instala dependencias con `npm install`.
 2. Completa los archivos `.env` en `client/` y `server/`.
-3. Arranca el backend con `npm run dev:server`.
-4. Arranca el frontend con `npm run dev:client`.
+3. Arranca frontend y backend juntos con `npm run dev`.
+
+Si prefieres ejecutar cada parte por separado:
+
+- `npm run dev:server`
+- `npm run dev:client`
+
+## Checks utiles
+
+- `npm run lint`
+- `npm run build`
+- `npm run test:server`
 
 ## Endpoints principales
 
@@ -57,4 +67,3 @@ FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nTU_CLAVE\n-----END PRIVATE KE
 - `DELETE /api/todos/:id`
 
 Todos los endpoints de tareas requieren `Authorization: Bearer <firebase-id-token>`.
-
