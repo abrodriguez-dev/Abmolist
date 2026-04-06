@@ -36,16 +36,40 @@ Backend en `server/.env`:
 PORT=4000
 CLIENT_ORIGIN=http://localhost:5173
 MONGODB_URI=mongodb+srv://usuario:password@cluster.mongodb.net/abmolist?retryWrites=true&w=majority
+FIREBASE_SERVICE_ACCOUNT_JSON=/ruta/completa/a/firebase-service-account.json
+```
+
+Tambien puedes usar estas variables en lugar del archivo JSON:
+
+```env
 FIREBASE_PROJECT_ID=tu_proyecto
 FIREBASE_CLIENT_EMAIL=firebase-adminsdk-xxxxx@tu_proyecto.iam.gserviceaccount.com
 FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nTU_CLAVE\n-----END PRIVATE KEY-----\n"
 ```
 
+## Configurar Firebase
+
+1. Crea un proyecto en Firebase Console.
+2. En `Authentication`, habilita `Email/Password`.
+3. Si quieres login con Google, habilita tambien `Google`.
+4. En `Project settings > Your apps`, crea una app web y copia sus valores a `client/.env`.
+5. En `Project settings > Service accounts`, genera una nueva clave privada JSON.
+6. Guarda ese archivo fuera del repo y apunta `FIREBASE_SERVICE_ACCOUNT_JSON` a su ruta completa dentro de `server/.env`.
+
+## Configurar MongoDB Atlas
+
+1. Crea un cluster en MongoDB Atlas.
+2. Crea un usuario de base de datos.
+3. En `Network Access`, permite tu IP actual para desarrollo.
+4. Copia la cadena de conexion del cluster y pegala en `MONGODB_URI`.
+5. Usa una base llamada `abmolist` dentro de esa URI para mantener el proyecto ordenado.
+
 ## Puesta en marcha
 
 1. Instala dependencias con `npm install`.
-2. Completa los archivos `.env` en `client/` y `server/`.
-3. Arranca frontend y backend juntos con `npm run dev`.
+2. Crea tus archivos locales con `cp client/.env.example client/.env` y `cp server/.env.example server/.env`.
+3. Completa los `.env` con los datos reales de Firebase y MongoDB Atlas.
+4. Arranca frontend y backend juntos con `npm run dev`.
 
 Si prefieres ejecutar cada parte por separado:
 

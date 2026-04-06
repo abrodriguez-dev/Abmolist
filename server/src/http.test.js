@@ -66,9 +66,20 @@ describe("server env config", () => {
     delete process.env.FIREBASE_PROJECT_ID;
     delete process.env.FIREBASE_CLIENT_EMAIL;
     delete process.env.FIREBASE_PRIVATE_KEY;
+    delete process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
 
     expect(() => validateServerEnv()).toThrow(
-      "Faltan variables de entorno del backend: MONGODB_URI, FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY."
+      "Faltan variables de entorno del backend: MONGODB_URI, FIREBASE_SERVICE_ACCOUNT_JSON o FIREBASE_PROJECT_ID/FIREBASE_CLIENT_EMAIL/FIREBASE_PRIVATE_KEY."
     );
+  });
+
+  it("accepts backend config when a Firebase service account file path is present", () => {
+    process.env.MONGODB_URI = "mongodb+srv://demo";
+    process.env.FIREBASE_SERVICE_ACCOUNT_JSON = "/tmp/firebase-service-account.json";
+    delete process.env.FIREBASE_PROJECT_ID;
+    delete process.env.FIREBASE_CLIENT_EMAIL;
+    delete process.env.FIREBASE_PRIVATE_KEY;
+
+    expect(() => validateServerEnv()).not.toThrow();
   });
 });

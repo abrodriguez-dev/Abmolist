@@ -144,9 +144,36 @@ button {
 
 .stack-form,
 .todo-panel,
-.auth-panel {
+.auth-panel,
+.setup-panel {
   display: grid;
   gap: 16px;
+}
+
+.setup-block {
+  padding: 18px;
+  border-radius: 20px;
+  background: var(--card-strong);
+  border: 1px solid var(--line);
+}
+
+.setup-block p {
+  margin-bottom: 0;
+  color: var(--muted);
+}
+
+.code-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.code-list code {
+  padding: 8px 10px;
+  border-radius: 999px;
+  background: rgba(15, 118, 110, 0.1);
+  color: var(--accent-strong);
 }
 
 .stack-form label,
@@ -282,4 +309,3 @@ button {
     align-items: stretch;
   }
 }
-

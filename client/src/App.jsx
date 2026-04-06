@@ -1,13 +1,16 @@
 import { useEffect, useState } from "react";
 import {
+  isFirebaseConfigured,
   loginWithGoogle,
   logout,
+  missingFirebaseEnvKeys,
   onAuthChanged,
   loginWithEmail,
   registerWithEmail
 } from "./lib/firebase";
 import { createTodo, deleteTodo, fetchTodos, updateTodo } from "./lib/api";
 import AuthPanel from "./components/AuthPanel";
+import SetupChecklist from "./components/SetupChecklist";
 import TodoShell from "./components/TodoShell";
 
 const initialForm = {
@@ -27,6 +30,11 @@ function App() {
   const [error, setError] = useState("");
 
   useEffect(() => {
+    if (!isFirebaseConfigured) {
+      setAuthLoading(false);
+      return () => {};
+    }
+
     const unsubscribe = onAuthChanged(async (currentUser) => {
       setUser(currentUser);
       setAuthLoading(false);
@@ -196,6 +204,8 @@ function App() {
         <div className="hero-panel">
           {authLoading ? (
             <div className="panel-message">Cargando sesion...</div>
+          ) : !isFirebaseConfigured ? (
+            <SetupChecklist missingFirebaseEnvKeys={missingFirebaseEnvKeys} />
           ) : user ? (
             <TodoShell
               busy={busy}
@@ -229,4 +239,3 @@ function App() {
 }
 
 export default App;
-
