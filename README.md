@@ -84,7 +84,7 @@ El repositorio ya esta preparado para desplegar frontend y backend juntos en un 
 
 - el frontend se construye desde la raiz con `npm run build`
 - el output estatico se publica desde `client/dist`
-- la API vive en la funcion [`api/[...path].mjs`](api/[...path].mjs)
+- la API vive en funciones Node bajo [`api/`](api)
 - la configuracion de Vercel esta en [`vercel.json`](vercel.json)
 
 ### Pasos

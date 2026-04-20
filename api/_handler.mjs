@@ -1,6 +1,6 @@
 import app, { initializeServer } from "../server/src/server.js";
 
-export default async function handler(request, response) {
+export default async function handleApiRequest(request, response) {
   try {
     await initializeServer();
     return app(request, response);
