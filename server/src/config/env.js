@@ -4,10 +4,32 @@ const firebaseInlineKeys = [
   "FIREBASE_PRIVATE_KEY"
 ];
 
+function getDefaultClientOrigin() {
+  if (process.env.CLIENT_ORIGIN) {
+    return process.env.CLIENT_ORIGIN;
+  }
+
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`;
+  }
+
+  return "http://localhost:5173";
+}
+
+function normalizeClientOrigins(value) {
+  return value
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+}
+
 export function getServerConfig() {
+  const clientOrigin = getDefaultClientOrigin();
+
   return {
     port: Number(process.env.PORT || 4000),
-    clientOrigin: process.env.CLIENT_ORIGIN || "http://localhost:5173"
+    clientOrigin,
+    clientOrigins: normalizeClientOrigins(clientOrigin)
   };
 }
 

@@ -34,7 +34,7 @@ Backend en `server/.env`:
 
 ```env
 PORT=4000
-CLIENT_ORIGIN=http://localhost:5173
+CLIENT_ORIGIN=http://localhost:5173,http://localhost:5174
 MONGODB_URI=mongodb+srv://usuario:password@cluster.mongodb.net/abmolist?retryWrites=true&w=majority
 FIREBASE_SERVICE_ACCOUNT_JSON=/ruta/completa/a/firebase-service-account.json
 ```
@@ -75,6 +75,63 @@ Si prefieres ejecutar cada parte por separado:
 
 - `npm run dev:server`
 - `npm run dev:client`
+
+Nota: Vite suele usar `5173`, pero si ese puerto esta ocupado puede subir a `5174`. Por eso el backend acepta ambos orígenes en desarrollo.
+
+## Despliegue en Vercel
+
+El repositorio ya esta preparado para desplegar frontend y backend juntos en un unico proyecto de Vercel:
+
+- el frontend se construye desde la raiz con `npm run build`
+- el output estatico se publica desde `client/dist`
+- la API vive en la funcion [`api/[...path].mjs`](api/[...path].mjs)
+- la configuracion de Vercel esta en [`vercel.json`](vercel.json)
+
+### Pasos
+
+1. Sube el repo a GitHub, GitLab o Bitbucket.
+2. Crea un proyecto nuevo en Vercel importando este repo desde la raiz.
+3. No cambies el `Root Directory`; debe ser la raiz del monorepo.
+4. Vercel leera `vercel.json` y usara:
+   - `Build Command`: `npm run build`
+   - `Output Directory`: `client/dist`
+5. En `Environment Variables`, configura:
+
+Frontend:
+
+```env
+VITE_FIREBASE_API_KEY=
+VITE_FIREBASE_AUTH_DOMAIN=
+VITE_FIREBASE_PROJECT_ID=
+VITE_FIREBASE_STORAGE_BUCKET=
+VITE_FIREBASE_MESSAGING_SENDER_ID=
+VITE_FIREBASE_APP_ID=
+```
+
+Backend:
+
+```env
+MONGODB_URI=
+FIREBASE_PROJECT_ID=
+FIREBASE_CLIENT_EMAIL=
+FIREBASE_PRIVATE_KEY=
+```
+
+Opcionales:
+
+```env
+CLIENT_ORIGIN=https://tu-dominio.com
+VITE_API_URL=https://tu-dominio.com/api
+```
+
+Si frontend y backend viven en el mismo proyecto de Vercel, puedes omitir `VITE_API_URL`; el cliente usara `/api` automaticamente. Tambien puedes omitir `CLIENT_ORIGIN` y el backend intentara usar `https://$VERCEL_URL`.
+
+### Recomendaciones para Vercel
+
+- En Vercel, usa las credenciales inline de Firebase Admin (`FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY`) en lugar de `FIREBASE_SERVICE_ACCOUNT_JSON`.
+- Pega `FIREBASE_PRIVATE_KEY` con los saltos de linea escapados como `\n`.
+- En Firebase Authentication, añade tu dominio de Vercel y tu dominio propio en `Authorized domains`.
+- Si usas MongoDB Atlas con restricciones de red, permite el acceso desde el entorno donde corra Vercel.
 
 ## Checks utiles
 

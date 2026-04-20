@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import {
+  getFirebaseErrorMessage,
   isFirebaseConfigured,
   loginWithGoogle,
   logout,
@@ -18,16 +19,43 @@ const initialForm = {
   password: ""
 };
 
+const initialTaskForm = {
+  title: "",
+  description: "",
+  status: "todo",
+  dueDate: ""
+};
+
+function toTaskForm(todo) {
+  return {
+    title: todo.title || "",
+    description: todo.description || "",
+    status: todo.status || (todo.completed ? "completed" : "todo"),
+    dueDate: todo.dueDate ? String(todo.dueDate).slice(0, 10) : ""
+  };
+}
+
+function getInitialTheme() {
+  if (typeof window === "undefined") {
+    return "light";
+  }
+
+  return window.localStorage.getItem("abmolist-theme") || "light";
+}
+
 function App() {
   const [authMode, setAuthMode] = useState("login");
   const [credentials, setCredentials] = useState(initialForm);
   const [user, setUser] = useState(null);
   const [todos, setTodos] = useState([]);
-  const [draft, setDraft] = useState("");
+  const [taskForm, setTaskForm] = useState(initialTaskForm);
+  const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+  const [editingTaskId, setEditingTaskId] = useState(null);
   const [loadingTodos, setLoadingTodos] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [theme, setTheme] = useState(getInitialTheme);
 
   useEffect(() => {
     if (!isFirebaseConfigured) {
@@ -59,6 +87,12 @@ function App() {
     return unsubscribe;
   }, []);
 
+  useEffect(() => {
+    document.body.classList.toggle("theme-dark", theme === "dark");
+    document.body.dataset.theme = theme;
+    window.localStorage.setItem("abmolist-theme", theme);
+  }, [theme]);
+
   const handleCredentialChange = (event) => {
     const { name, value } = event.target;
     setCredentials((current) => ({
@@ -81,7 +115,7 @@ function App() {
 
       setCredentials(initialForm);
     } catch (requestError) {
-      setError(requestError.message);
+      setError(getFirebaseErrorMessage(requestError));
     } finally {
       setBusy(false);
     }
@@ -94,7 +128,7 @@ function App() {
     try {
       await loginWithGoogle();
     } catch (requestError) {
-      setError(requestError.message);
+      setError(getFirebaseErrorMessage(requestError));
     } finally {
       setBusy(false);
     }
@@ -107,51 +141,116 @@ function App() {
     try {
       await logout();
     } catch (requestError) {
-      setError(requestError.message);
+      setError(getFirebaseErrorMessage(requestError));
     } finally {
       setBusy(false);
     }
   };
 
-  const handleCreateTodo = async (event) => {
-    event.preventDefault();
+  const handleTaskFormChange = (event) => {
+    const { name, value } = event.target;
+    setTaskForm((current) => ({
+      ...current,
+      [name]: value
+    }));
+  };
 
-    if (!draft.trim() || !user) {
+  const handleOpenTaskModal = () => {
+    setEditingTaskId(null);
+    setTaskForm(initialTaskForm);
+    setError("");
+    setIsTaskModalOpen(true);
+  };
+
+  const handleOpenEditTaskModal = (todo) => {
+    setEditingTaskId(todo._id);
+    setTaskForm(toTaskForm(todo));
+    setError("");
+    setIsTaskModalOpen(true);
+  };
+
+  const handleCloseTaskModal = () => {
+    if (busy) {
       return;
+    }
+
+    setEditingTaskId(null);
+    setIsTaskModalOpen(false);
+    setTaskForm(initialTaskForm);
+  };
+
+  const handleSubmitTask = async () => {
+    if (!taskForm.title.trim() || !user) {
+      return null;
     }
 
     setBusy(true);
     setError("");
 
     try {
-      const newTodo = await createTodo(user, draft.trim());
-      setTodos((current) => [newTodo, ...current]);
-      setDraft("");
+      const payload = {
+        title: taskForm.title.trim(),
+        description: taskForm.description.trim(),
+        status: taskForm.status,
+        dueDate: taskForm.dueDate || null
+      };
+
+      if (editingTaskId) {
+        const updatedTodo = await updateTodo(user, editingTaskId, payload);
+
+        setTodos((current) =>
+          current.map((item) => (item._id === updatedTodo._id ? updatedTodo : item))
+        );
+      } else {
+        const newTodo = await createTodo(user, payload);
+        setTodos((current) => [newTodo, ...current]);
+      }
+
+      setEditingTaskId(null);
+      setTaskForm(initialTaskForm);
+      setIsTaskModalOpen(false);
+      return true;
     } catch (requestError) {
       setError(requestError.message);
+      return null;
     } finally {
       setBusy(false);
     }
   };
 
-  const handleToggleTodo = async (todo) => {
+  const handleStatusChange = async (todoId, status) => {
     if (!user) {
-      return;
+      return null;
     }
 
+    const previousTodos = todos;
+    const optimisticTodos = todos.map((item) =>
+      item._id === todoId
+        ? {
+            ...item,
+            status,
+            completed: status === "completed"
+          }
+        : item
+    );
+
+    setTodos(optimisticTodos);
     setBusy(true);
     setError("");
 
     try {
-      const updated = await updateTodo(user, todo._id, {
-        completed: !todo.completed
+      const updated = await updateTodo(user, todoId, {
+        status
       });
 
       setTodos((current) =>
         current.map((item) => (item._id === updated._id ? updated : item))
       );
+      return updated;
     } catch (requestError) {
+      setTodos(previousTodos);
       setError(requestError.message);
+      return null;
     } finally {
       setBusy(false);
     }
@@ -175,33 +274,14 @@ function App() {
     }
   };
 
-  return (
-    <main className="page-shell">
-      <section className="hero-card">
-        <div className="hero-copy">
-          <p className="eyebrow">Abmolist</p>
-          <h1>Tu lista de tareas, protegida por sesion y lista para crecer.</h1>
-          <p className="lead">
-            React y Vite en el cliente, Firebase para autenticar, Express para
-            validar tokens y MongoDB Atlas para guardar cada tarea por usuario.
-          </p>
-          <div className="status-grid">
-            <article>
-              <span>Frontend</span>
-              <strong>React + Vite</strong>
-            </article>
-            <article>
-              <span>Auth</span>
-              <strong>Firebase</strong>
-            </article>
-            <article>
-              <span>Data</span>
-              <strong>MongoDB Atlas</strong>
-            </article>
-          </div>
-        </div>
+  const handleToggleTheme = () => {
+    setTheme((current) => (current === "dark" ? "light" : "dark"));
+  };
 
-        <div className="hero-panel">
+  return (
+    <main className={`page-shell ${user ? "page-shell--dashboard" : ""}`}>
+      <section className={`hero-card ${user ? "hero-card--dashboard" : ""}`}>
+        <div className={`hero-panel ${user ? "hero-panel--dashboard" : ""}`}>
           {authLoading ? (
             <div className="panel-message">Cargando sesion...</div>
           ) : !isFirebaseConfigured ? (
@@ -209,16 +289,23 @@ function App() {
           ) : user ? (
             <TodoShell
               busy={busy}
-              draft={draft}
               error={error}
+              isEditingTask={Boolean(editingTaskId)}
+              isTaskModalOpen={isTaskModalOpen}
               loadingTodos={loadingTodos}
+              taskForm={taskForm}
+              theme={theme}
               todos={todos}
               user={user}
-              onCreateTodo={handleCreateTodo}
+              onEditTodo={handleOpenEditTaskModal}
+              onCloseTaskModal={handleCloseTaskModal}
               onDeleteTodo={handleDeleteTodo}
-              onDraftChange={setDraft}
+              onOpenTaskModal={handleOpenTaskModal}
               onLogout={handleLogout}
-              onToggleTodo={handleToggleTodo}
+              onStatusChange={handleStatusChange}
+              onSubmitTask={handleSubmitTask}
+              onTaskFormChange={handleTaskFormChange}
+              onToggleTheme={handleToggleTheme}
             />
           ) : (
             <AuthPanel

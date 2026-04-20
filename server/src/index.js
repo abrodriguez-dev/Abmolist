@@ -1,13 +1,6 @@
-import "dotenv/config";
-import { createApp } from "./app.js";
-import { getServerConfig, validateServerEnv } from "./config/env.js";
-import { connectToDatabase } from "./config/mongoose.js";
-const config = getServerConfig();
-const app = createApp(config);
+import app, { config, initializeServer } from "./server.js";
 
-validateServerEnv();
-
-connectToDatabase()
+initializeServer()
   .then(() => {
     app.listen(config.port, () => {
       console.log(`API lista en http://localhost:${config.port}`);

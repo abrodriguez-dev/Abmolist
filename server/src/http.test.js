@@ -54,10 +54,23 @@ describe("server env config", () => {
   it("uses sensible defaults", () => {
     delete process.env.PORT;
     delete process.env.CLIENT_ORIGIN;
+    delete process.env.VERCEL_URL;
 
     expect(getServerConfig()).toEqual({
       port: 4000,
-      clientOrigin: "http://localhost:5173"
+      clientOrigin: "http://localhost:5173",
+      clientOrigins: ["http://localhost:5173"]
+    });
+  });
+
+  it("uses the Vercel deployment URL when available", () => {
+    delete process.env.CLIENT_ORIGIN;
+    process.env.VERCEL_URL = "abmolist.vercel.app";
+
+    expect(getServerConfig()).toEqual({
+      port: 4000,
+      clientOrigin: "https://abmolist.vercel.app",
+      clientOrigins: ["https://abmolist.vercel.app"]
     });
   });
 

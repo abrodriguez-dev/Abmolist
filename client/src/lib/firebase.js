@@ -38,10 +38,31 @@ const app = isFirebaseConfigured ? initializeApp(firebaseConfig) : null;
 const auth = app ? getAuth(app) : null;
 const googleProvider = auth ? new GoogleAuthProvider() : null;
 
+const firebaseErrorMessages = {
+  "auth/configuration-not-found":
+    "Google Login no esta configurado en Firebase. Activa el proveedor Google en Authentication > Sign-in method.",
+  "auth/operation-not-allowed":
+    "Este metodo de acceso no esta habilitado en Firebase Authentication.",
+  "auth/unauthorized-domain":
+    "Este dominio no esta autorizado en Firebase. Anade localhost en Authentication > Settings > Authorized domains.",
+  "auth/popup-blocked":
+    "El navegador bloqueo la ventana emergente de Google. Permite popups e intentalo de nuevo.",
+  "auth/popup-closed-by-user":
+    "Cerraste la ventana de acceso con Google antes de completar el inicio de sesion."
+};
+
 function createMissingConfigError() {
   return new Error(
     `Falta configurar Firebase en el cliente. Revisa estas variables: ${missingFirebaseEnv.join(", ")}.`
   );
+}
+
+export function getFirebaseErrorMessage(error) {
+  if (!error?.code) {
+    return error?.message || "Ha ocurrido un error inesperado con Firebase.";
+  }
+
+  return firebaseErrorMessages[error.code] || error.message;
 }
 
 export const onAuthChanged = (callback) => {

@@ -1,4 +1,6 @@
-const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:4000/api";
+const apiUrl =
+  import.meta.env.VITE_API_URL ||
+  (import.meta.env.DEV ? "http://localhost:4000/api" : "/api");
 
 async function request(user, path, options = {}) {
   const token = await user.getIdToken();
@@ -25,10 +27,12 @@ async function request(user, path, options = {}) {
 
 export const fetchTodos = (user) => request(user, "/todos");
 
-export const createTodo = (user, title) =>
+export const createTodo = (user, payload) =>
   request(user, "/todos", {
     method: "POST",
-    body: JSON.stringify({ title })
+    body: JSON.stringify(
+      typeof payload === "string" ? { title: payload } : payload
+    )
   });
 
 export const updateTodo = (user, todoId, payload) =>
@@ -41,4 +45,3 @@ export const deleteTodo = (user, todoId) =>
   request(user, `/todos/${todoId}`, {
     method: "DELETE"
   });
-

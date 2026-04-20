@@ -1,15 +1,70 @@
-import Todo from "../models/Todo.js";
+import Todo, { TASK_STATUSES } from "../models/Todo.js";
+
+function getNormalizedStatus(todoLike) {
+  if (TASK_STATUSES.includes(todoLike.status)) {
+    return todoLike.status;
+  }
+
+  return todoLike.completed ? "completed" : "todo";
+}
+
+function serializeTodo(todoDocument) {
+  const todo = todoDocument.toObject
+    ? todoDocument.toObject()
+    : { ...todoDocument };
+  const status = getNormalizedStatus(todo);
+
+  return {
+    ...todo,
+    status,
+    description: todo.description || "",
+    dueDate: todo.dueDate || null,
+    completed: status === "completed"
+  };
+}
+
+function parseStatus(status) {
+  if (typeof status !== "string") {
+    return null;
+  }
+
+  const normalizedStatus = status.trim().toLowerCase();
+
+  return TASK_STATUSES.includes(normalizedStatus) ? normalizedStatus : null;
+}
+
+function parseDueDate(value) {
+  if (value === null || value === undefined || value === "") {
+    return { ok: true, value: null };
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return { ok: false, value: null };
+  }
+
+  return { ok: true, value: date };
+}
 
 export async function getTodos(request, response) {
   const todos = await Todo.find({ userId: request.user.uid }).sort({
     createdAt: -1
   });
 
-  response.json(todos);
+  response.json(todos.map(serializeTodo));
 }
 
 export async function createTodo(request, response) {
   const title = request.body?.title?.trim();
+  const description =
+    typeof request.body?.description === "string"
+      ? request.body.description.trim()
+      : "";
+  const status = request.body?.status
+    ? parseStatus(request.body.status)
+    : "todo";
+  const dueDate = parseDueDate(request.body?.dueDate);
 
   if (!title) {
     return response.status(400).json({
@@ -17,12 +72,28 @@ export async function createTodo(request, response) {
     });
   }
 
+  if (!status) {
+    return response.status(400).json({
+      message: "El estado de la tarea no es valido."
+    });
+  }
+
+  if (!dueDate.ok) {
+    return response.status(400).json({
+      message: "La fecha de la tarea no es valida."
+    });
+  }
+
   const todo = await Todo.create({
     title,
+    description,
+    status,
+    dueDate: dueDate.value,
+    completed: status === "completed",
     userId: request.user.uid
   });
 
-  return response.status(201).json(todo);
+  return response.status(201).json(serializeTodo(todo));
 }
 
 export async function updateTodo(request, response) {
@@ -41,8 +112,41 @@ export async function updateTodo(request, response) {
     updates.title = title;
   }
 
+  if (typeof request.body.description === "string") {
+    updates.description = request.body.description.trim();
+  }
+
+  if (request.body.status !== undefined) {
+    const status = parseStatus(request.body.status);
+
+    if (!status) {
+      return response.status(400).json({
+        message: "El estado de la tarea no es valido."
+      });
+    }
+
+    updates.status = status;
+    updates.completed = status === "completed";
+  }
+
+  if (request.body.dueDate !== undefined) {
+    const dueDate = parseDueDate(request.body.dueDate);
+
+    if (!dueDate.ok) {
+      return response.status(400).json({
+        message: "La fecha de la tarea no es valida."
+      });
+    }
+
+    updates.dueDate = dueDate.value;
+  }
+
   if (typeof request.body.completed === "boolean") {
     updates.completed = request.body.completed;
+
+    if (updates.status === undefined) {
+      updates.status = request.body.completed ? "completed" : "todo";
+    }
   }
 
   const todo = await Todo.findOneAndUpdate(
@@ -63,7 +167,7 @@ export async function updateTodo(request, response) {
     });
   }
 
-  return response.json(todo);
+  return response.json(serializeTodo(todo));
 }
 
 export async function deleteTodo(request, response) {
@@ -82,4 +186,3 @@ export async function deleteTodo(request, response) {
 
   return response.status(204).send();
 }
-
