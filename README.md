@@ -87,6 +87,10 @@ El repositorio ya esta preparado para desplegar frontend y backend juntos en un 
 - la API vive en funciones Node bajo [`api/`](api)
 - la configuracion de Vercel esta en [`vercel.json`](vercel.json)
 
+Dominio de produccion actual:
+
+- `https://abmolist-client.vercel.app/`
+
 ### Pasos
 
 1. Sube el repo a GitHub, GitLab o Bitbucket.
@@ -125,6 +129,18 @@ VITE_API_URL=https://tu-dominio.com/api
 ```
 
 Si frontend y backend viven en el mismo proyecto de Vercel, puedes omitir `VITE_API_URL`; el cliente usara `/api` automaticamente. Tambien puedes omitir `CLIENT_ORIGIN` y el backend intentara usar `https://$VERCEL_URL`.
+
+### Configuracion final recomendada para este proyecto
+
+En Vercel, para el dominio actual, deja:
+
+```env
+CLIENT_ORIGIN=https://abmolist-client.vercel.app
+```
+
+Y en Firebase Authentication > Authorized domains, asegúrate de tener:
+
+- `abmolist-client.vercel.app`
 
 ### Recomendaciones para Vercel
 
