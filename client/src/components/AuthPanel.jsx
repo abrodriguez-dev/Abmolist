@@ -59,12 +59,18 @@ function AuthPanel({
       </form>
 
       <button
-        className="secondary-button"
+        className="secondary-button google-button"
         type="button"
         onClick={onGoogleLogin}
         disabled={busy}
+        aria-label="Continuar con Google"
+        title="Continuar con Google"
       >
-        Continuar con Google
+        <img
+          src="/google-icon-logo-svgrepo-com.svg"
+          alt=""
+          aria-hidden="true"
+        />
       </button>
 
       <button
@@ -81,4 +87,3 @@ function AuthPanel({
 }
 
 export default AuthPanel;
-

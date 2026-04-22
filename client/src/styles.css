@@ -224,6 +224,21 @@ button {
   border: 1px solid var(--line);
 }
 
+.google-button {
+  width: 52px;
+  height: 52px;
+  padding: 0;
+  display: inline-grid;
+  place-items: center;
+  justify-self: center;
+}
+
+.google-button img {
+  width: 24px;
+  height: 24px;
+  display: block;
+}
+
 .ghost-link {
   background: transparent;
   color: var(--accent-strong);
