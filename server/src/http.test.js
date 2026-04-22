@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { getHealth } from "./controllers/healthController.js";
 import { authenticate } from "./middleware/authenticate.js";
 import { getServerConfig, validateServerEnv } from "./config/env.js";
+import { buildSampleTodos } from "./lib/sampleTodos.js";
 
 function createResponse() {
   return {
@@ -94,5 +95,21 @@ describe("server env config", () => {
     delete process.env.FIREBASE_PRIVATE_KEY;
 
     expect(() => validateServerEnv()).not.toThrow();
+  });
+});
+
+describe("sample todos", () => {
+  it("builds three onboarding tasks for a new user", () => {
+    const now = new Date("2026-04-22T10:00:00.000Z");
+    const todos = buildSampleTodos("user-123", now);
+
+    expect(todos).toHaveLength(3);
+    expect(todos.map((todo) => todo.status)).toEqual([
+      "todo",
+      "in_progress",
+      "completed"
+    ]);
+    expect(todos.every((todo) => todo.userId === "user-123")).toBe(true);
+    expect(todos[2].completed).toBe(true);
   });
 });

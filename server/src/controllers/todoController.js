@@ -1,4 +1,6 @@
 import Todo, { TASK_STATUSES } from "../models/Todo.js";
+import UserOnboarding from "../models/UserOnboarding.js";
+import { buildSampleTodos } from "../lib/sampleTodos.js";
 
 function getNormalizedStatus(todoLike) {
   if (TASK_STATUSES.includes(todoLike.status)) {
@@ -48,9 +50,49 @@ function parseDueDate(value) {
 }
 
 export async function getTodos(request, response) {
-  const todos = await Todo.find({ userId: request.user.uid }).sort({
+  const userId = request.user.uid;
+  let todos = await Todo.find({ userId }).sort({
     createdAt: -1
   });
+
+  if (todos.length === 0) {
+    const onboarding = await UserOnboarding.findOne({ userId });
+    let shouldSeedSampleTasks = false;
+    let shouldReloadTodos = false;
+
+    if (!onboarding) {
+      try {
+        await UserOnboarding.create({
+          userId,
+          sampleTasksSeededAt: new Date()
+        });
+        shouldSeedSampleTasks = true;
+      } catch (error) {
+        if (error.code !== 11000) {
+          throw error;
+        }
+
+        shouldReloadTodos = true;
+      }
+    }
+
+    if (shouldSeedSampleTasks) {
+      try {
+        await Todo.insertMany(buildSampleTodos(userId));
+      } catch (error) {
+        await UserOnboarding.deleteOne({ userId });
+        throw error;
+      }
+
+      shouldReloadTodos = true;
+    }
+
+    if (shouldReloadTodos) {
+      todos = await Todo.find({ userId }).sort({
+        createdAt: -1
+      });
+    }
+  }
 
   response.json(todos.map(serializeTodo));
 }
